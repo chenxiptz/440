@@ -9,8 +9,10 @@
 #define BOARD_SIZE 49
 #define PLAYER1 0
 #define PLAYER2 1
-#define MINIMAX_AGENT 0
+#define MINIMAX_AGENT 1
 #define RF_AGENT 1-MINIMAX_AGENT
+#define AB_AGENT 1-MINIMAX_AGENT
+#define RF_AGENT2 1-AB_AGENT
 using namespace std;
 
 class gomoku{
@@ -34,7 +36,6 @@ class gomoku{
 			int value;
 			vector<tree_node> childrens;
 		};
-		int eval_move(int pos, int depth);
 		void get_possible_moves(vector<int> & moves);
 
 		gomoku();
@@ -45,8 +46,14 @@ class gomoku{
 		void rf_minimax(int start);
 		void play_alphabeta();
 
+
+		int eval_move(int pos, int depth);
 		int eval(int player);
 		int minimax_choose();
+
+		int ab_choose(int & alpha, int & beta);
+		int ab_eval(int & alpha, int & beta);
+		int ab_eval_move(int pos, int depth, int & alpha, int & beta);
 
 		int first_rule_checker(int player, int open);
 		int second_rule_checker(int player, int open);
@@ -56,6 +63,7 @@ class gomoku{
 		int col_checker(int player, int piece_number, int space);
 		int ldiag_checker(int player, int piece_number, int space);
 		int rdiag_checker(int player, int piece_number, int space);
+
 
 
 		void undo_move(int player, int lin_idx);

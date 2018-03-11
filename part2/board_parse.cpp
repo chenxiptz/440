@@ -16,7 +16,6 @@ bool check_piece(char piece, int player)
 
 	return false;
 }
-
 int gomoku::row_checker(int player, int piece_number, int space)
 {
 

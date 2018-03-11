@@ -18,9 +18,7 @@ gomoku::gomoku()
 	}
 
 }
-void gomoku::test_reflex(){
 
-}
 void gomoku::print_board()
 {
 	for(int j = 0; j < BOARD_DIM; j++)
@@ -132,19 +130,19 @@ void gomoku::rf_minimax(int start)
 
 	// std::cout << "got into the function" <<endl;
 	// reflect agent will be the first player
-	int first_player = MINIMAX_AGENT;
-	int next_player = RF_AGENT;
+	int first_player = 1;
+	int next_player = 0;
 	std::cout << "first_player: " << first_player << endl;
 	std::cout << "next_player: " << next_player << endl;
 
 	// std::cout << first_player << endl;
 	// std::cout << "getting the start index" <<endl;
 
-	int start_index = winning_block(first_player).first;
+	//int start_index = winning_block(first_player).first;
 	// cout << "placing the move" << endl;
-	int st = rand() % 49;
-	place_move(first_player, st);
-	print_board();
+	//int st = rand() % 49;
+	//place_move(first_player, st);
+	//print_board();
 
 	// cout << "before the players assignment" << endl;
 	this->curr_player = next_player;
@@ -204,6 +202,10 @@ void gomoku::rf_minimax(int start)
 		}
 		else{
 			int move = minimax_choose();
+			
+			int alpha = INT_MIN;
+			int beta = INT_MAX;
+			int move2 = ab_choose(alpha, beta);
 			place_move(this->curr_player, move);
 		}
 		num_moves++;
@@ -281,11 +283,111 @@ void gomoku::undo_move(int player, int lin_idx)
 		this->board[y][x] = '.';
 	}
 }
+int gomoku::ab_choose(int & alpha, int & beta){
+	map<int, int> moves;
+	vector<int> move_range;
+	get_possible_moves(move_range);
+	int max = INT_MIN;
+	int move = -1;
+	int a = alpha, b = beta;
+	for (auto it = move_range.begin(); it != move_range.end(); it++){
+		tentative_move(MINIMAX_AGENT, *it);
+		if (is_winner(MINIMAX_AGENT)) {
+			undo_move(MINIMAX_AGENT, *it);
+			return (*it);
+		}
+		else moves[*it] = ab_eval_move(*it, 2, a, b);
+
+		undo_move(MINIMAX_AGENT, *it);
+		if (moves[*it] > max){ 
+			max = moves[*it];
+			move = *it;
+		}
+		a = max > a ? max : a;
+		if (b <= a) break;
+	}
+	/*
+	int move = -1;
+	int max = INT_MIN;
+	for (auto it = moves.begin(); it != moves.end(); it++){
+		if (it->second >= max){
+			max = it->second;
+			move = it->first;
+		}
+	}*/
+	cout << "Alpha_beta chose location: " << move << endl;
+	return move;
+}
+
+int gomoku::ab_eval_move(int pos, int depth, int & alpha, int & beta){
+	if (depth == 1){
+		vector<int> move_range;
+		get_possible_moves(move_range);
+		map<int, int> moves;
+		int max = INT_MIN;
+		//int move = -1;
+		int a = alpha;
+		int b = beta;
+		for (auto it = move_range.begin(); it != move_range.end(); it++){
+			tentative_move(MINIMAX_AGENT, *it);
+			if (is_winner(MINIMAX_AGENT)) moves[*it] = INT_MAX;
+			else moves[*it] = eval(MINIMAX_AGENT);
+			undo_move(MINIMAX_AGENT, *it);
+			if (moves[*it] > max){
+				max = moves[*it];
+				//move = *it;
+			}
+			a = moves[*it] > a ? moves[*it] : a;
+			if (b <= a){
+				break;
+			}
+		}
+		/*
+		int max = INT_MIN;
+		for (auto it = moves.begin(); it != moves.end(); it++){
+			if (it->second >= max) max = it->second;
+		}
+		if (moves.size() == 0) return 0;*/
+		return max;
+	}
+	/* oppo's turn */
+	if (depth == 2){
+		vector<int> move_range;
+		get_possible_moves(move_range);
+		map<int, int> moves;
+		int a = alpha;
+		int b = beta;
+		int min = INT_MAX;
+		for (auto it = move_range.begin(); it != move_range.end(); it++){
+			tentative_move(RF_AGENT, *it);
+			if (is_winner(RF_AGENT)) moves[*it] = INT_MIN;
+			else moves[*it] = ab_eval_move(*it, 1, a, b);
+			undo_move(RF_AGENT, *it);
+			if (moves[*it] < min){
+				min = moves[*it];
+				//move = *it;
+			}
+			b = moves[*it] < b ? moves[*it] : b;
+			if (b <= a) break;
+		}
+		/*
+		for (auto it = moves.begin(); it != moves.end(); it++){
+			if (it->second <= min) min = it->second;
+		}
+		if (moves.size() == 0) return 0;*/
+		return min;
+	}
+}
+
 
 int gomoku::minimax_choose(){
 	map<int, int> moves;
 	vector<int> move_range;
 	get_possible_moves(move_range);
+
+	int move = -1;
+	int max = INT_MIN;
+
 	for (auto it = move_range.begin(); it != move_range.end(); it++){
 		tentative_move(MINIMAX_AGENT, *it);
 		if ((*it) == 12){
@@ -297,35 +399,37 @@ int gomoku::minimax_choose(){
 		}
 		else moves[*it] = eval_move(*it, 2);
 		undo_move(MINIMAX_AGENT, *it);
-	}
-	int move = -1;
-	int max = INT_MIN;
-	for (auto it = moves.begin(); it != moves.end(); it++){
-		if (it->second >= max){
-			max = it->second;
-			move = it->first;
+		if (moves[*it] > max){
+			max = moves[*it];
+			move = *it;
 		}
 	}
 	cout << "Minimax chose location: " << move << endl;
 	return move;
 	
 }
+
 int gomoku::eval_move(int pos, int depth){
 	if (depth == 1){
 		vector<int> move_range;
 		get_possible_moves(move_range);
 		map<int, int> moves;
+		int max = INT_MIN;
 		for (auto it = move_range.begin(); it != move_range.end(); it++){
 			tentative_move(MINIMAX_AGENT, *it);
 			if (is_winner(MINIMAX_AGENT)) moves[*it] = INT_MAX;
 			else moves[*it] = eval(MINIMAX_AGENT);
+			if (moves[*it] > max){
+				max = moves[*it];
+				//move = *it;
+			}
 			undo_move(MINIMAX_AGENT, *it);
-		}
-		int max = INT_MIN;
+			
+		}/*
 		for (auto it = moves.begin(); it != moves.end(); it++){
 			if (it->second >= max) max = it->second;
 		}
-		if (moves.size() == 0) return 0;
+		if (moves.size() == 0) return 0;*/
 		return max;
 	}
 	/* oppo's turn */
@@ -333,36 +437,25 @@ int gomoku::eval_move(int pos, int depth){
 		vector<int> move_range;
 		get_possible_moves(move_range);
 		map<int, int> moves;
+		int min = INT_MAX;
 		for (auto it = move_range.begin(); it != move_range.end(); it++){
 			tentative_move(RF_AGENT, *it);
 			if (is_winner(RF_AGENT)) moves[*it] = INT_MIN;
 			else moves[*it] = eval_move(*it, 1);
+			if (moves[*it] < min){
+				min = moves[*it];
+				//move = *it;
+			}
 			undo_move(RF_AGENT, *it);
+
 		}
-		int min = INT_MAX;
+		/*
 		for (auto it = moves.begin(); it != moves.end(); it++){
 			if (it->second <= min) min = it->second;
 		}
-		if (moves.size() == 0) return 0;
+		if (moves.size() == 0) return 0;*/
 		return min;
 	}
-	/*
-	if (depth == 3){
-		map<int, int> moves;
-		for (int i = 0; i < BOARD_SIZE; i++){
-			if (rem_blocks[i]){
-				tentative_move(0, i);
-				moves[i] = eval_move(i, 2);
-				undo_move(0, i);
-			}
-		}
-		int max = -30;
-		for (auto it = moves.begin(); it != moves.end(); it++){
-			if (it->second >= max) max = it->second;
-		}
-		if (moves.size() == 0) return 0;
-		return max;
-	}*/
 }
 
 int gomoku::eval(int player){
@@ -388,15 +481,39 @@ int gomoku::eval(int player){
 	/* 3 in a row */
 	if (third_rule_checker(MINIMAX_AGENT,2) != -1) return INT_MIN + 3;
 	else if (third_rule_checker(MINIMAX_AGENT, 1) != -1) value -= 100;
+	else{
+		int maxblock = winning_block(RF_AGENT).second;
+		value -= maxblock * 10;
+	}
 	if (third_rule_checker(RF_AGENT,2) != -1) value += 50;
 	else if (third_rule_checker(RF_AGENT, 1) != -1) value += 30;
+	else{
+		int maxblock = winning_block(MINIMAX_AGENT).second;
+		value += maxblock * 10;
+	}
 
-	/* either player wins */
 	
 	return value;
 }
 
 void gomoku::get_possible_moves(vector<int> & moves){
+	
+	if (placed_moves.size() == 0){
+		for (int i = 0; i < 3; i++){
+			for (int j = BOARD_DIM-1; j > BOARD_DIM - 4; j--){
+				moves.push_back(j*BOARD_DIM + i);
+			}
+		}
+		return;
+	}
+
+	if (placed_moves.size() > 24){
+		for (int i = 0; i < 49; i++){
+			if (rem_blocks[i]) moves.push_back(i);
+		}
+		return;
+	}
+
 	for (int i = 0; i < BOARD_SIZE; i++){
 		int x = i % BOARD_DIM;
 		int y = i / BOARD_DIM;
