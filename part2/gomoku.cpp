@@ -23,6 +23,7 @@ void gomoku::print_board()
 {
 	for(int j = 0; j < BOARD_DIM; j++)
 	{
+		cout << BOARD_DIM - j - 1 << '|';
 		for(int i = 0; i < BOARD_DIM; i++)
 		{
 			char to_print = this->board[j][i];
@@ -31,6 +32,8 @@ void gomoku::print_board()
 		}
 		std::cout << std::endl;
 	}
+	cout << " --------------" << endl;
+	cout << "  0 1 2 3 4 5 6" << endl;
 }
 
 void gomoku::play_game()
@@ -124,6 +127,138 @@ void gomoku::play_game()
     	cout << "No winner was found :-(" << std::endl;
 }
 
+void gomoku::text_ui(){
+	cout << "Choose an enemy to play against: 1. reflex, 2. minimax, 3. alpha_beta" << endl;
+	int enemy;
+	cin >> enemy;
+	while (enemy < 1 || enemy>3){
+		cout << "Invalid input, please choose again." << endl;
+		cin >> enemy;
+	}
+	cout << "Do you want to be the first player? 0. yes, 1. no" << endl;
+	int order;
+	cin >> order;
+	while (order < 0 || order>1){
+		cout << "Invalid input, please choose again." << endl;
+		cin >> order;
+	}
+
+	int first_player = 1;
+	int next_player = 0;
+	//std::cout << "first_player: " << first_player << endl;
+	//std::cout << "next_player: " << next_player << endl;
+	MINIMAX_AGENT = 1 - order;
+	AB_AGENT = 1 - order;
+
+	this->curr_player = next_player;
+	this->prev_player = first_player;
+
+	int num_moves = 0;
+	// cout << "before the while loop" << endl;
+	while (!is_winner(this->prev_player) && num_moves < 49)
+	{
+		// First, we check if we have four stones any where
+		cout << "num_moves " << num_moves << endl;
+		if (curr_player == order){
+			int userx, usery;
+			cout << "Input the coordinate of your next move: " << endl;
+			cout << "x: ";
+			cin >> userx;
+			cout << "y: ";
+			cin >> usery;
+			int idx = (6 - usery) * 7 + userx;
+			while (idx < 0 || idx>48 || !rem_blocks[idx]){
+				cout << "Invalid position, please try again: " << endl;
+				cout << "x: ";
+				cin >> userx;
+				cout << endl;
+				cout << "y: ";
+				cin >> usery;
+				cout << endl;
+				idx = (6 - usery) * 7 + userx;
+			}
+			place_move(this->curr_player, idx);
+		}
+		else{
+			switch (enemy)
+			{
+			case 1:{
+				int out1 = first_rule_checker(this->curr_player, 1);
+				if (out1 != -1)
+				{
+					std::cout << "got into first rule checker" << std::endl;
+					place_move(this->curr_player, out1);
+					num_moves++;
+					int temp = this->curr_player;
+					this->curr_player = this->prev_player;
+					this->prev_player = temp;
+
+					print_board();
+					continue;
+				}
+
+				int out2 = second_rule_checker(this->curr_player, 1);
+				if (out2 != -1)
+				{
+					std::cout << "got into second rule checker" << std::endl;
+					place_move(this->curr_player, out2);
+					num_moves++;
+					int temp = this->curr_player;
+					this->curr_player = this->prev_player;
+					this->prev_player = temp;
+
+					print_board();
+					continue;
+				}
+
+				int out3 = third_rule_checker(this->curr_player, 2);
+				if (out3 != -1)
+				{
+					std::cout << "got into third rule checker" << std::endl;
+					place_move(this->curr_player, out3);
+					num_moves++;
+					int temp = this->curr_player;
+					this->curr_player = this->prev_player;
+					this->prev_player = temp;
+
+					print_board();
+					continue;
+				}
+
+				int win_index = winning_block(this->curr_player).first;
+				place_move(this->curr_player, win_index);
+				break;
+			}
+			case 2:{
+				int move = minimax_choose();
+				place_move(this->curr_player, move);
+				break;
+			}
+			case 3:{
+				int alpha = INT_MIN;
+				int beta = INT_MAX;
+				int move = ab_choose(alpha, beta);
+				place_move(this->curr_player, move);
+				break;
+			}
+			}
+		}
+		num_moves++;
+		int temp = this->curr_player;
+		this->curr_player = this->prev_player;
+		this->prev_player = temp;
+
+		print_board();
+	}
+
+	if (num_moves < 49)
+	{
+		cout << "Congrats to player " << this->prev_player << " !!!" << std::endl;
+	}
+	else
+		cout << "No winner was found :-(" << std::endl;
+
+}
 void gomoku::rf_minimax(int start)
 {
 	// Tossing a coin to see who starts first
@@ -205,7 +340,7 @@ void gomoku::rf_minimax(int start)
 			
 			int alpha = INT_MIN;
 			int beta = INT_MAX;
-			int move2 = ab_choose(alpha, beta);
+			//int move = ab_choose(alpha, beta);
 			place_move(this->curr_player, move);
 		}
 		num_moves++;
@@ -218,13 +353,61 @@ void gomoku::rf_minimax(int start)
 
 	if (num_moves < 49)
 	{
-		if (prev_player == 0) wins++;
-		cout << "Congrats to player " << this->prev_player << "start at "<<start<< " !!!" << std::endl;
+		cout << "Congrats to player " << this->prev_player <<" !!!" << std::endl;
 	}
 	else
 		cout << "No winner was found :-(" << std::endl;
 }
 
+
+void gomoku::minimax_alphabeta()
+{
+	// Tossing a coin to see who starts first
+
+	// std::cout << "got into the function" <<endl;
+	// reflect agent will be the first player
+	int first_player = 1;
+	int next_player = 0;
+	std::cout << "first_player: " << first_player << endl;
+	std::cout << "next_player: " << next_player << endl;
+
+
+	this->curr_player = next_player;
+	this->prev_player = first_player;
+
+	int num_moves = 0;
+	// cout << "before the while loop" << endl;
+	while (!is_winner(this->prev_player) && num_moves < 49)
+	{
+		// First, we check if we have four stones any where
+		cout << "num_moves " << num_moves << endl;
+		if (curr_player == MINIMAX_AGENT){
+			int move = minimax_choose();
+			place_move(this->curr_player, move);
+		}
+		else{
+			//int move = minimax_choose();
+
+			int alpha = INT_MIN;
+			int beta = INT_MAX;
+			int move = ab_choose(alpha, beta);
+			place_move(this->curr_player, move);
+		}
+		num_moves++;
+		int temp = this->curr_player;
+		this->curr_player = this->prev_player;
+		this->prev_player = temp;
+
+		print_board();
+	}
+
+	if (num_moves < 49)
+	{
+		cout << "Congrats to player " << this->prev_player << " !!!" << std::endl;
+	}
+	else
+		cout << "No winner was found :-(" << std::endl;
+}
 void gomoku::place_move(int player, int lin_idx)
 {
 	int x = lin_idx % BOARD_DIM;
@@ -288,21 +471,22 @@ int gomoku::ab_choose(int & alpha, int & beta){
 	vector<int> move_range;
 	get_possible_moves(move_range);
 	int max = INT_MIN;
-	int move = -1;
+	int move = move_range[0];
 	int a = alpha, b = beta;
+	ab_nodes = 0;
 	for (auto it = move_range.begin(); it != move_range.end(); it++){
-		tentative_move(MINIMAX_AGENT, *it);
-		if (is_winner(MINIMAX_AGENT)) {
-			undo_move(MINIMAX_AGENT, *it);
-			return (*it);
+		tentative_move(AB_AGENT, *it);
+		if (is_winner(AB_AGENT)) {
+			moves[*it] = INT_MAX-1;
 		}
 		else moves[*it] = ab_eval_move(*it, 2, a, b);
 
-		undo_move(MINIMAX_AGENT, *it);
+		undo_move(AB_AGENT, *it);
 		if (moves[*it] > max){ 
 			max = moves[*it];
 			move = *it;
 		}
+		ab_nodes++;
 		a = max > a ? max : a;
 		if (b <= a) break;
 	}
@@ -315,11 +499,13 @@ int gomoku::ab_choose(int & alpha, int & beta){
 			move = it->first;
 		}
 	}*/
-	cout << "Alpha_beta chose location: " << move << endl;
+	cout << "Alpha_beta chose location: (" << move%7 <<", "<< (6-move/7)<<")" << endl;
+	cout << "Alpha_beta expanded: " << ab_nodes << " nodes." << endl;
 	return move;
 }
 
 int gomoku::ab_eval_move(int pos, int depth, int & alpha, int & beta){
+	int oppo = 1 - AB_AGENT;
 	if (depth == 1){
 		vector<int> move_range;
 		get_possible_moves(move_range);
@@ -329,15 +515,16 @@ int gomoku::ab_eval_move(int pos, int depth, int & alpha, int & beta){
 		int a = alpha;
 		int b = beta;
 		for (auto it = move_range.begin(); it != move_range.end(); it++){
-			tentative_move(MINIMAX_AGENT, *it);
-			if (is_winner(MINIMAX_AGENT)) moves[*it] = INT_MAX;
-			else moves[*it] = eval(MINIMAX_AGENT);
-			undo_move(MINIMAX_AGENT, *it);
+			tentative_move(AB_AGENT, *it);
+			if (is_winner(AB_AGENT)) moves[*it] = INT_MAX - 2;
+			else moves[*it] = eval(AB_AGENT);
+			undo_move(AB_AGENT, *it);
 			if (moves[*it] > max){
 				max = moves[*it];
 				//move = *it;
 			}
 			a = moves[*it] > a ? moves[*it] : a;
+			ab_nodes++;
 			if (b <= a){
 				break;
 			}
@@ -359,15 +546,16 @@ int gomoku::ab_eval_move(int pos, int depth, int & alpha, int & beta){
 		int b = beta;
 		int min = INT_MAX;
 		for (auto it = move_range.begin(); it != move_range.end(); it++){
-			tentative_move(RF_AGENT, *it);
-			if (is_winner(RF_AGENT)) moves[*it] = INT_MIN;
+			tentative_move(oppo, *it);
+			if (is_winner(oppo)) moves[*it] = INT_MIN + 1;
 			else moves[*it] = ab_eval_move(*it, 1, a, b);
-			undo_move(RF_AGENT, *it);
+			undo_move(oppo, *it);
 			if (moves[*it] < min){
 				min = moves[*it];
 				//move = *it;
 			}
 			b = moves[*it] < b ? moves[*it] : b;
+			ab_nodes++;
 			if (b <= a) break;
 		}
 		/*
@@ -385,17 +573,14 @@ int gomoku::minimax_choose(){
 	vector<int> move_range;
 	get_possible_moves(move_range);
 
-	int move = -1;
+	int move = move_range[0];
 	int max = INT_MIN;
+	mm_nodes = 0;
 
 	for (auto it = move_range.begin(); it != move_range.end(); it++){
 		tentative_move(MINIMAX_AGENT, *it);
-		if ((*it) == 12){
-			int b = 0;
-		}
 		if (is_winner(MINIMAX_AGENT)) {
-			undo_move(MINIMAX_AGENT, *it);
-			return (*it);
+			moves[*it] = INT_MAX-1;
 		}
 		else moves[*it] = eval_move(*it, 2);
 		undo_move(MINIMAX_AGENT, *it);
@@ -403,13 +588,20 @@ int gomoku::minimax_choose(){
 			max = moves[*it];
 			move = *it;
 		}
+		mm_nodes++;
 	}
-	cout << "Minimax chose location: " << move << endl;
+	if (move == 7){
+		int a = 2;
+	}
+	cout << "Minimax chose location:  (" << move % 7 << ", " << (6 - move / 7) << ")" << endl;
+	cout << "Minimax expanded: " << mm_nodes << " nodes." << endl;
+
 	return move;
 	
 }
 
 int gomoku::eval_move(int pos, int depth){
+	int oppo = 1 - MINIMAX_AGENT;
 	if (depth == 1){
 		vector<int> move_range;
 		get_possible_moves(move_range);
@@ -417,13 +609,14 @@ int gomoku::eval_move(int pos, int depth){
 		int max = INT_MIN;
 		for (auto it = move_range.begin(); it != move_range.end(); it++){
 			tentative_move(MINIMAX_AGENT, *it);
-			if (is_winner(MINIMAX_AGENT)) moves[*it] = INT_MAX;
+			if (is_winner(MINIMAX_AGENT)) moves[*it] = INT_MAX - 2;
 			else moves[*it] = eval(MINIMAX_AGENT);
 			if (moves[*it] > max){
 				max = moves[*it];
 				//move = *it;
 			}
 			undo_move(MINIMAX_AGENT, *it);
+			mm_nodes++;
 			
 		}/*
 		for (auto it = moves.begin(); it != moves.end(); it++){
@@ -439,14 +632,15 @@ int gomoku::eval_move(int pos, int depth){
 		map<int, int> moves;
 		int min = INT_MAX;
 		for (auto it = move_range.begin(); it != move_range.end(); it++){
-			tentative_move(RF_AGENT, *it);
-			if (is_winner(RF_AGENT)) moves[*it] = INT_MIN;
+			tentative_move(oppo, *it);
+			if (is_winner(oppo)) moves[*it] = INT_MIN + 1;
 			else moves[*it] = eval_move(*it, 1);
 			if (moves[*it] < min){
 				min = moves[*it];
 				//move = *it;
 			}
-			undo_move(RF_AGENT, *it);
+			undo_move(oppo, *it);
+			mm_nodes++;
 
 		}
 		/*
@@ -459,36 +653,37 @@ int gomoku::eval_move(int pos, int depth){
 }
 
 int gomoku::eval(int player){
-	int oppo =  RF_AGENT;
+	int oppo =  1-player;
 	int value = 0;
 
-	if (is_winner(MINIMAX_AGENT)) return INT_MAX - 1;
-	if (is_winner(RF_AGENT)) return INT_MIN + 1;
+	if (is_winner(player)) return INT_MAX - 2;
+	if (is_winner(oppo)) return INT_MIN + 2;
 
-	if (first_rule_checker(RF_AGENT, 2) != -1){
-		return INT_MIN + 1;
+	if (first_rule_checker(oppo, 2) != -1){
+		return INT_MIN + 2;
 	}
 
 	/* 4 in a row */
-	if (first_rule_checker(MINIMAX_AGENT, 2) != -1) return INT_MAX - 2;
-	else if (first_rule_checker(MINIMAX_AGENT,1) != -1) value += 50;
-	else if (winning_block(MINIMAX_AGENT).second == 4) value += 100;
+	if (first_rule_checker(player, 2) != -1) value += 100;
+	else if (first_rule_checker(player,1) != -1) value += 50;
+	else if (winning_block(player).second == 4) value += 100;
 		
 	
-	if (first_rule_checker(RF_AGENT, 1) != -1) return INT_MIN + 2;
-	if (winning_block(RF_AGENT).second == 4) return INT_MIN + 2;
+	if (first_rule_checker(oppo, 1) != -1) return INT_MIN + 3;
+	if (winning_block(oppo).second == 4) return INT_MIN + 3;
 
 	/* 3 in a row */
-	if (third_rule_checker(MINIMAX_AGENT,2) != -1) return INT_MIN + 3;
-	else if (third_rule_checker(MINIMAX_AGENT, 1) != -1) value -= 100;
+	if (third_rule_checker(oppo,2) != -1) return INT_MIN + 4;
+	else if (third_rule_checker(oppo, 1) != -1) value -= 100;
 	else{
-		int maxblock = winning_block(RF_AGENT).second;
+		int maxblock = winning_block(oppo).second;
 		value -= maxblock * 10;
 	}
-	if (third_rule_checker(RF_AGENT,2) != -1) value += 50;
-	else if (third_rule_checker(RF_AGENT, 1) != -1) value += 30;
+
+	if (third_rule_checker(oppo,2) != -1) value += 50;
+	else if (third_rule_checker(oppo, 1) != -1) value += 30;
 	else{
-		int maxblock = winning_block(MINIMAX_AGENT).second;
+		int maxblock = winning_block(player).second;
 		value += maxblock * 10;
 	}
 
@@ -592,9 +787,10 @@ bool gomoku::is_winner(int player)
 	auto iter_to_max = std::max_element(best_number_pieces.begin(), best_number_pieces.end());
 	int max_element = *iter_to_max;
 
-	if(max_element == 5)
+	if (max_element == 5){
 		return true;
-
+	}
+		
 	return false;
 }
 

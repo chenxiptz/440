@@ -646,7 +646,7 @@ pair<int,int> gomoku::winning_rdiag(int player)
 			for(idx_y = row,idx_x = col; idx_y < 5 + row || idx_x < 5 + col; idx_x++, idx_y++)
 			{
 				////std::cout << "Row: " << idx_y << " Col: " << idx_x << std::endl;
-				if(check_piece(board[idx_y][idx_x], player))
+				if(check_piece(board[idx_y][idx_x], oppo))
 				{
 					////std::cout << "Got to this point" << endl;
 					found_oppo = true;

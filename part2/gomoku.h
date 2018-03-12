@@ -9,9 +9,7 @@
 #define BOARD_SIZE 49
 #define PLAYER1 0
 #define PLAYER2 1
-#define MINIMAX_AGENT 1
 #define RF_AGENT 1-MINIMAX_AGENT
-#define AB_AGENT 1-MINIMAX_AGENT
 #define RF_AGENT2 1-AB_AGENT
 using namespace std;
 
@@ -29,8 +27,10 @@ class gomoku{
 		int player_two_char = 0;
 
 	public:
-
-		int wins = 0;
+		int MINIMAX_AGENT = 0;
+		int AB_AGENT = 1;
+		int mm_nodes = 0;
+		int ab_nodes = 0;
 		struct tree_node{
 			int lin_idx;
 			int value;
@@ -40,11 +40,12 @@ class gomoku{
 
 		gomoku();
 		void play_game();
+		void text_ui();
 		int return_move(int store, int index);
 		void test_reflex();
 
 		void rf_minimax(int start);
-		void play_alphabeta();
+		void minimax_alphabeta();
 
 
 		int eval_move(int pos, int depth);
