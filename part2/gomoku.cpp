@@ -664,7 +664,7 @@ int gomoku::eval(int player){
 	}
 
 	/* 4 in a row */
-	if (first_rule_checker(player, 2) != -1) value += 100;
+	if (first_rule_checker(player, 2) != -1) return INT_MAX - 3;
 	else if (first_rule_checker(player,1) != -1) value += 50;
 	else if (winning_block(player).second == 4) value += 100;
 		

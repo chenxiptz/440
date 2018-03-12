@@ -27,8 +27,8 @@ class gomoku{
 		int player_two_char = 0;
 
 	public:
-		int MINIMAX_AGENT = 0;
-		int AB_AGENT = 1;
+		int MINIMAX_AGENT = 1;
+		int AB_AGENT = 0;
 		int mm_nodes = 0;
 		int ab_nodes = 0;
 		struct tree_node{
